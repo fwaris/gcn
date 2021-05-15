@@ -162,14 +162,10 @@ let inline (->>) m1 m2 = compose (M m1) (None,M m2)
 let inline (=>>) m1 (n,m2) = compose (M m1) (Some n, M m2)
 
 module Tensor = 
+    //Note: ensure 't matches tensor datatype otherwise ToArray might crash the app (i.e. exception cannot be caught)
     let private _getData<'t> (t:TorchTensor) =
         let s = t.Data<'t>()
-        let xs = Array.zeroCreate s.Length
-        for i in 0 .. s.Length-1 do
-            xs.[i] <- s.[i]
-        
-        //s.ToArray()
-        xs
+        s.ToArray()
 
     let getData<'t> (t:TorchTensor) =
         if t.device_type <> DeviceType.CPU then 

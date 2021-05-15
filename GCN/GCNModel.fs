@@ -10,6 +10,7 @@ let gcnLayer in_features out_features hasBias (adj:TorchTensor) =
     let bias = if hasBias then Parameter(randName(),Float32Tensor.empty([|out_features|],requiresGrad=true)) |> Some else None
     let parms = [| yield weight; if hasBias then yield bias.Value|]
     Init.kaiming_uniform(weight.Tensor) |> ignore
+    if hasBias then Init.uniform(bias.Value.Tensor,0.,1.0) |> ignore
 
     Model.create(parms,fun wts t -> 
         use support = t.mm(wts.[0])
@@ -22,9 +23,7 @@ let gcnLayer in_features out_features hasBias (adj:TorchTensor) =
 let create nfeat nhid nclass dropout adj =
     let gc1 = gcnLayer nfeat nhid true adj
     let gc2 = gcnLayer nhid nclass true adj        
-    // let relu = ReLU()
-    // let logm = LogSoftmax(1L)
-    let drp = if dropout then Dropout() |> M else Model.nop
+    let drp = if dropout > 0.0 then Dropout(dropout) |> M else Model.nop
     
     fwd3 gc1 gc2 drp (fun t g1 g2 drp -> 
         use t = gc1.forward(t)

@@ -18,7 +18,7 @@ let run (datafolder,no_cuda,fastmode,epochs,dropout,lr,hidden,seed,weight_decay)
 
     let nclass = labels.max().ToInt64() + 1L
 
-    let model = GCNModel.create features.shape.[1] (int64 hidden) nclass true adj
+    let model = GCNModel.create features.shape.[1] (int64 hidden) nclass dropout adj
     let loss = NN.Functions.nll_loss()
 
     if cuda then
@@ -29,10 +29,13 @@ let run (datafolder,no_cuda,fastmode,epochs,dropout,lr,hidden,seed,weight_decay)
     let train epoch =
         let t = DateTime.Now
         model.Module.Train()
+        let parms = model.Module.parameters()
         optimizer.zero_grad()
         let output = model.forward(features)
         let loss_train = loss.Invoke(output.[ idx_train], labels.[idx_train])
+        let ls = float loss_train
         let acc_train = Utils.accuracy(output.[idx_train], labels.[idx_train])
+        printfn $"training - loss: {ls}, acc: {acc_train}"
         loss_train.backward()
         optimizer.step()
 

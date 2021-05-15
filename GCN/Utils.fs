@@ -35,10 +35,12 @@ let sparse_mx_to_torch_sparse_tensor (m:Matrix<float32>) =
     let idxs = Seq.append rows cols |> Seq.toArray
     let idx1 = idxs |> Int64Tensor.from |> fun x -> x.view(2L,-1L)
     let vals = coo |> Seq.map(fun (r,c,v) -> v) |> Seq.toArray |> Float32Tensor.from     
-    Float32Tensor.sparse(idx1,vals,[|int64 m.RowCount; int64 m.ColumnCount|])
+    let t = Float32Tensor.sparse(idx1,vals,[|int64 m.RowCount; int64 m.ColumnCount|])
+    let dt = TorchSharp.Fun.Tensor.getData<float32>(t.to_dense())
+    t
 
 let accuracy(output:TorchTensor, labels:TorchTensor) = 
-    let predsData = TorchSharp.Fun.Tensor.getData<int64>(output)
+    let predsData = TorchSharp.Fun.Tensor.getData<float32>(output)
     let preds  = predsData |> Array.chunkBySize (int output.shape.[1]) |> Array.map maxIdx
     let lbls = TorchSharp.Fun.Tensor.getData<int64>(labels)
     let correct = Array.zip preds lbls |> Array.filter (fun (a,b) -> a = b) |> Array.length |> float
