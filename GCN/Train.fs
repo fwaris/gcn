@@ -59,7 +59,10 @@ let run (datafolder,no_cuda,fastmode,epochs,dropout,lr,hidden,seed,weight_decay)
 
     let t_total = DateTime.Now
     for i in 1 .. epochs-1 do
+        printfn $"epoch {i}"
         train i
     printfn "Optimization done"
     printfn $"Time elapsed: {(DateTime.Now - t_total).TotalMinutes} minutes"
+
+    test()
 

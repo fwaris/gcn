@@ -43,7 +43,7 @@ module Defs =
     let parse args =
         let parser = ArgumentParser.Create<Args>(programName = "gcn.exe")
         let args = parser.Parse(args)
-        let datafolder = args.GetResult (Args.Datafolder, defaultValue = @"C:\Users\fwaris\Downloads\pygcn-master\data\cora")
+        let datafolder = args.GetResult (Args.Datafolder, defaultValue = @"C:\s\Repos\gcn\data\cora")
         let no_cuda = args.GetResult (Args.No_CUDA, defaultValue=no_cuda)
         let fastmode = args.GetResult (Args.Fastmode, defaultValue=fastmode)
         let epochs = args.GetResult (Args.Epochs, defaultValue=epochs)
@@ -55,7 +55,11 @@ module Defs =
         datafolder,no_cuda,fastmode,epochs,dropout,lr,hidden,seed,weight_decay
         
 [<EntryPoint>]
-    let main args =
-        let runParms = Defs.parse args
+let main args =
+    let runParms = Defs.parse args
+    try
         Train.run runParms
-        0
+    with ex ->
+        printfn "%s" ex.Message
+    System.Console.ReadLine() |> ignore
+    0

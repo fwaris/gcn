@@ -164,13 +164,18 @@ let inline (=>>) m1 (n,m2) = compose (M m1) (Some n, M m2)
 module Tensor = 
     let private _getData<'t> (t:TorchTensor) =
         let s = t.Data<'t>()
-        s.ToArray()
+        let xs = Array.zeroCreate s.Length
+        for i in 0 .. s.Length-1 do
+            xs.[i] <- s.[i]
+        
+        //s.ToArray()
+        xs
 
     let getData<'t> (t:TorchTensor) =
         if t.device_type <> DeviceType.CPU then 
-            use t = t.clone()
-            use t = t.cpu()
-            _getData<'t> t
+            //use t1 = t.clone()
+            use t2 = t.cpu()
+            _getData<'t> t2
         else 
             _getData<'t> t
   
