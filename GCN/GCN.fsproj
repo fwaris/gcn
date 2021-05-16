@@ -6,8 +6,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="TorchSharp.Fun.fs" />
-    <Compile Include="Utils.fs" />
     <Compile Include="GCNModel.fs" />
+    <Compile Include="Utils.fs" />
     <Compile Include="Train.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

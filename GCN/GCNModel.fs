@@ -5,6 +5,7 @@ open type TorchSharp.NN.Modules
 open TorchSharp.Fun 
 let inline (!>) (x:^a) : ^b = ((^a or ^b) : (static member op_Implicit : ^a -> ^b) x)
 
+///single graph convolutional layer
 let gcnLayer in_features out_features hasBias (adj:TorchTensor) =
     let weight = Parameter(randName(),Float32Tensor.empty([|in_features; out_features|],requiresGrad=true))
     let bias = if hasBias then Parameter(randName(),Float32Tensor.empty([|out_features|],requiresGrad=true)) |> Some else None
@@ -23,7 +24,7 @@ let gcnLayer in_features out_features hasBias (adj:TorchTensor) =
 let create nfeat nhid nclass dropout adj =
     let gc1 = gcnLayer nfeat nhid true adj
     let gc2 = gcnLayer nhid nclass true adj        
-    let drp = if dropout > 0.0 then Dropout(dropout) |> M else Model.nop
+    let drp = Dropout(dropout)
     
     fwd3 gc1 gc2 drp (fun t g1 g2 drp -> 
         use t = gc1.forward(t)

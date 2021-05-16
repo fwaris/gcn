@@ -30,13 +30,13 @@ let normalize (m:Matrix<float32>) =
 
 let sparse_mx_to_torch_sparse_tensor (m:Matrix<float32>) =
     let coo = m.EnumerateIndexed(Zeros.AllowSkip)
-    let rows = coo |> Seq.map (fun (r,c,v) -> int64 r)
+    let rows = coo |> Seq.map (fun (r,c,v) -> int64 r)   
     let cols = coo |> Seq.map (fun (r,c,v) -> int64 c)
+    let vals = coo |> Seq.map (fun (r,c,v) -> v)
     let idxs = Seq.append rows cols |> Seq.toArray
-    let idx1 = idxs |> Int64Tensor.from |> fun x -> x.view(2L,-1L)
-    let vals = coo |> Seq.map(fun (r,c,v) -> v) |> Seq.toArray |> Float32Tensor.from     
-    let t = Float32Tensor.sparse(idx1,vals,[|int64 m.RowCount; int64 m.ColumnCount|])
-    let dt = TorchSharp.Fun.Tensor.getData<float32>(t.to_dense())
+    let idxT = idxs |> Int64Tensor.from |> fun x -> x.view(2L, idxs.Length / 2 |> int64)
+    let valsT = vals |> Seq.toArray |> Float32Tensor.from     
+    let t = Float32Tensor.sparse(idxT,valsT,[|int64 m.RowCount; int64 m.ColumnCount|])
     t
 
 let accuracy(output:TorchTensor, labels:TorchTensor) = 
@@ -64,27 +64,26 @@ let loadData (dataFolder:string) dataset =
                 Label = xs.[xs.Length-1]
             |})
 
-    let edges =
+    let idx_map = dataFeatures |> Seq.mapi (fun i x-> x.Id,i) |> Map.ofSeq
+
+    let edges_unordered =
         edgesFile
         |> File.ReadLines
         |> Seq.map (fun x->x.Split('\t'))
         |> Seq.map (fun xs -> xs.[0],xs.[1])
         |> Seq.toArray
 
-    let edgeIdx = 
-        edges 
-        |> Seq.collect (fun (a,b)->[a;b]) 
-        |> Seq.distinct 
-        |> Seq.mapi (fun i x->x,i) 
-        |> dict
+    let edges = 
+        edges_unordered 
+        |> Array.map (fun (a,b) -> idx_map.[a],idx_map.[b])
 
-    let ftrs = Matrix.Build.DenseOfRows(dataFeatures |> Seq.map (fun x->Array.toSeq x.Features))
+    let ftrs =  Matrix.Build.SparseOfRowArrays(dataFeatures |> Seq.map (fun x-> x.Features) |> Seq.toArray)
 
     let graph = Matrix.Build.SparseFromCoordinateFormat
                     (
-                        edgeIdx.Count, edgeIdx.Count, edges.Length,     //rows,cols,num vals
-                        edges |> Array.map (fun x -> edgeIdx.[fst x]),  //hot row idx
-                        edges |> Array.map (fun x -> edgeIdx.[snd x]),  //hot col idx
+                        idx_map.Count, idx_map.Count, edges.Length,     //rows,cols,num vals
+                        edges |> Array.map fst,  //hot row idx
+                        edges |> Array.map snd,  //hot col idx
                         edges |> Array.map (fun _ -> 1.0f)              //values
                     )
 

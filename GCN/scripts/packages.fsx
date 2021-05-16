@@ -15,8 +15,7 @@
 //#r "nuget: libtorch-cuda-11.1-win-x64, 1.8.0.7"
 System.Runtime.InteropServices.NativeLibrary.Load(@"D:\s\libtorch\lib\torch_cuda.dll")
 
-#load @"..\MLUtils.fs"
-#load @"..\MathUtils.fs"
+
 #load @"..\TorchSharp.Fun.fs"
 #I @"C:\Program Files\dotnet\shared\Microsoft.WindowsDesktop.App\5.0.4"
 #r "System.Windows.Forms"

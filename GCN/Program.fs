@@ -57,9 +57,6 @@ module Defs =
 [<EntryPoint>]
 let main args =
     let runParms = Defs.parse args
-    try
-        Train.run runParms
-    with ex ->
-        printfn "%s" ex.Message
+    Train.run runParms
     System.Console.ReadLine() |> ignore
     0

@@ -22,34 +22,38 @@ let run (datafolder,no_cuda,fastmode,epochs,dropout,lr,hidden,seed,weight_decay)
     let loss = NN.Functions.nll_loss()
 
     if cuda then
-        model.Module.cuda() |> ignore        
+        model.Module.cuda() |> ignore
 
     let optimizer = NN.Optimizer.Adam(model.Module.parameters(), learningRate = lr, weight_decay=weight_decay)
 
     let train epoch =
         let t = DateTime.Now
-        model.Module.Train()
-        let parms = model.Module.parameters()
+        model.Module.Train()        
         optimizer.zero_grad()
         let output = model.forward(features)
         let loss_train = loss.Invoke(output.[ idx_train], labels.[idx_train])
-        let ls = float loss_train
         let acc_train = Utils.accuracy(output.[idx_train], labels.[idx_train])
-        printfn $"training - loss: {ls}, acc: {acc_train}"
         loss_train.backward()
         optimizer.step()
 
-        if fastmode then
-            model.Module.Eval()
-            let y' = model.forward(features)
-            let loss_val = loss.Invoke(y'.[idx_val], labels.[idx_val])
-            let acc_val = Utils.accuracy(y'.[idx_val], labels.[idx_val])
-            printfn 
-                $"""
-                Epoch: {epoch}, loss_train: {float loss_train}, 
-                acc_train: {acc_train}, loss_val: {float loss_val},
-                acc_val: {acc_val}, time: {t}
-                """
+        let parms = model.Module.parameters()
+        let data = parms |> Array.map TorchSharp.Fun.Tensor.getData<float32>
+        let i = 1
+
+        let loss_val,acc_val =
+            if not fastmode then
+                model.Module.Eval()
+                let y' = model.forward(features)
+                let loss_val = loss.Invoke(y'.[idx_val], labels.[idx_val])
+                let acc_val = Utils.accuracy(y'.[idx_val], labels.[idx_val])
+                loss_val,acc_val
+            else
+                let loss_val = loss.Invoke(output.[idx_val], labels.[idx_val])
+                let acc_val = Utils.accuracy(output.[idx_val], labels.[idx_val])
+                loss_val,acc_val
+                
+        printf $"Epoch: {epoch}, loss_train: %0.4f{float loss_train}, acc_train: %0.4f{acc_train}, "
+        printfn $"loss_val: %0.4f{float loss_val}, acc_val: %0.4f{acc_val}"
 
     let test() =
         model.Module.Eval()
@@ -62,10 +66,9 @@ let run (datafolder,no_cuda,fastmode,epochs,dropout,lr,hidden,seed,weight_decay)
 
     let t_total = DateTime.Now
     for i in 1 .. epochs-1 do
-        printfn $"epoch {i}"
         train i
     printfn "Optimization done"
-    printfn $"Time elapsed: {(DateTime.Now - t_total).TotalMinutes} minutes"
+    printfn $"Time elapsed: %0.2f{(DateTime.Now - t_total).TotalSeconds} seconds"
 
     test()
 
