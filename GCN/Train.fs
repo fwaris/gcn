@@ -9,12 +9,12 @@ let run (datafolder,no_cuda,fastmode,epochs,dropout,lr,hidden,seed,weight_decay)
     
     let  adj, features, labels, idx_train, idx_val, idx_test = Utils.loadData datafolder None
 
-    let features = if cuda then features.cuda() else features
-    let adj = if cuda then adj.cuda() else adj
-    let labels = if cuda then labels.cuda() else labels
-    let idx_train = (if cuda then idx_train.cuda() else idx_train) |> TorchTensorIndex.Tensor
-    let idx_val = (if cuda then idx_val.cuda() else idx_val)       |> TorchTensorIndex.Tensor
-    let idx_test = (if cuda then idx_test.cuda() else idx_test)    |> TorchTensorIndex.Tensor
+    let features    = if cuda then features.cuda() else features
+    let adj         = if cuda then adj.cuda() else adj
+    let labels      = if cuda then labels.cuda() else labels
+    let idx_train   = (if cuda then idx_train.cuda() else idx_train) |> TorchTensorIndex.Tensor
+    let idx_val     = (if cuda then idx_val.cuda() else idx_val)     |> TorchTensorIndex.Tensor
+    let idx_test    = (if cuda then idx_test.cuda() else idx_test)   |> TorchTensorIndex.Tensor
 
     let nclass = labels.max().ToInt64() + 1L
 
@@ -35,10 +35,6 @@ let run (datafolder,no_cuda,fastmode,epochs,dropout,lr,hidden,seed,weight_decay)
         let acc_train = Utils.accuracy(output.[idx_train], labels.[idx_train])
         loss_train.backward()
         optimizer.step()
-
-        let parms = model.Module.parameters()
-        let data = parms |> Array.map TorchSharp.Fun.Tensor.getData<float32>
-        let i = 1
 
         let loss_val,acc_val =
             if not fastmode then

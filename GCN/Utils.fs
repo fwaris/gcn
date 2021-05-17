@@ -24,7 +24,7 @@ let normalize (m:Matrix<float32>) =
     let rowsum = m.RowSums()
     let r_inv = rowsum.PointwisePower(-1.0f)
     let r_inv = r_inv.Map(fun x-> if Single.IsInfinity x then 0.0f else x)
-    let r_mat_inv = Matrix.Build.SparseOfDiagonalVector(r_inv)
+    let r_mat_inv = Matrix.Build.SparseOfDiagonalVector(r_inv)                  //Laplacian
     let mx = r_mat_inv.Multiply(m)
     mx
 
@@ -82,8 +82,8 @@ let loadData (dataFolder:string) dataset =
     let graph = Matrix.Build.SparseFromCoordinateFormat
                     (
                         idx_map.Count, idx_map.Count, edges.Length,     //rows,cols,num vals
-                        edges |> Array.map fst,  //hot row idx
-                        edges |> Array.map snd,  //hot col idx
+                        edges |> Array.map fst,                         //hot row idx
+                        edges |> Array.map snd,                         //hot col idx
                         edges |> Array.map (fun _ -> 1.0f)              //values
                     )
 

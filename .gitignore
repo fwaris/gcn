@@ -7,6 +7,7 @@
 GCN/bin/
 GCN/obj/
 GCN/.vs/
+out/
 
 # User-specific files
 *.rsuser

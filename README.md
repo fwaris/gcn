@@ -20,6 +20,8 @@ The Graph Convolutional Network (GCN) model presented in this repo is based on t
 
 It is a port of the [Pytorch GCN model](http://github.com/tkipf/pygcn).
 
+### For more context see this [LinkedIn article](https://www.linkedin.com/pulse/graph-convolutional-network-model-strongly-typed-faisal-waris-phd/?trackingId=i4c8eRsEUdaaaXP5KkFLdw%3D%3D)
+
 ## TorchSharp.Fun
 
 The code for TorchSharp.Fun is included in the repo. At this stage it is expected to undergo considerable churn and therefore is not released as an independent package.
