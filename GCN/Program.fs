@@ -3,7 +3,11 @@ open System
 open Argu
 open System.Diagnostics
 
-System.Runtime.InteropServices.NativeLibrary.Load(@"D:\s\libtorch\lib\torch_cuda.dll") |> ignore
+//change these for your environment 
+let TORCH_LIB_PATH = @"D:\s\libtorch\lib\torch_cuda.dll"
+let DATA_FOLDER    =  @"C:\s\Repos\gcn\data\cora"
+
+System.Runtime.InteropServices.NativeLibrary.Load(TORCH_LIB_PATH) |> ignore
 
 module Defs =
     let no_cuda =  false
@@ -43,7 +47,7 @@ module Defs =
     let parse args =
         let parser = ArgumentParser.Create<Args>(programName = "gcn.exe")
         let args = parser.Parse(args)
-        let datafolder = args.GetResult (Args.Datafolder, defaultValue = @"C:\s\Repos\gcn\data\cora")
+        let datafolder = args.GetResult (Args.Datafolder, defaultValue = DATA_FOLDER)
         let no_cuda = args.GetResult (Args.No_CUDA, defaultValue=no_cuda)
         let fastmode = args.GetResult (Args.Fastmode, defaultValue=fastmode)
         let epochs = args.GetResult (Args.Epochs, defaultValue=epochs)
