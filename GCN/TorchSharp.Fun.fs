@@ -1,4 +1,4 @@
-module TorchSharp.Fun
+module rec TorchSharp.Fun
 open System
 open TorchSharp
 open TorchSharp.Tensor
@@ -17,41 +17,6 @@ let registerNamed (parent:IModel) (name:string,child:IModel) =
 let register (parent:IModel) (child:IModel) = 
     registerNamed parent (randName(),child)
 
-[<AbstractClass>]
-type AbstractModel() =
-    abstract member forward : TorchTensor->TorchTensor
-    abstract member Module : Module
-    interface IModel with
-        member this.forward(x) = this.forward(x)
-        member this.Module = this.Module
-    //operators TBD
-    static member (+) (a:IModel,b:TorchTensor) = {new IModel with
-                                                        member _.forward(x) = use t1 = a.forward(x) in t1 + b
-                                                        member _.Module = a.Module
-                                                   }
-                                                   |> Model   
-
-and CustomModel(name,parameters,fwd:TorchTensor[]->TorchTensor->TorchTensor) =
-    inherit CustomModule(name,parameters)
-    override this.forward(t) = fwd (this.parameters()) t
-    interface IModel with
-        member this.forward(t) = this.forward(t)
-        member this.Module = this :> _
-
-and Model (a:IModel) =
-    inherit AbstractModel()
-    override _.forward(x) = a.forward(x)
-    override _.Module = a.Module
-    member this.dispose() = if this.Module <> null then this.Module.Dispose()
-    static member create(parameters:Parameter[],fwd:TorchTensor[]->TorchTensor->TorchTensor,?name) =
-        let name = defaultArg name (randName())
-        new CustomModel(name,parameters,fwd)
-    static member nop = {new IModel with
-                            member _.forward t = t
-                            member _.Module = null
-                        }
-                        |> Model
-    
 ///Convert a TorchSharp module to a Model 
 let inline M< ^T when  ^T : (member forward:TorchTensor->TorchTensor)> (mdl:^T) =
     match box mdl with
@@ -68,84 +33,84 @@ let inline M< ^T when  ^T : (member forward:TorchTensor->TorchTensor)> (mdl:^T) 
         }
         |> Model
 
+let inline private registerNamedChildren names childModules parent =      
+    Seq.zip (Seq.tail names) childModules     
+    |> Seq.iter (fun (n,c) -> registerNamed parent (n,M c))
 
-let inline fwd< ^T when  ^T : (member forward:TorchTensor->TorchTensor)> 
-                (parent:^T) 
-                (forwardFunc : TorchTensor -> IModel -> TorchTensor) =
-    let p = M parent
-    {new IModel with 
-        member _.forward(t) = forwardFunc t p
-        member _.Module = p.Module
-    }
-    |> Model  
-
-/// <summary>
-/// Returns a Model whose forward function is supplied by 'forwardFunc'.
-/// <para>Parent and child can be TorchSharp modules; these will be converted to Models.</para>
-/// <para>Child will be registered as submodule of parent.</para>
-/// <para>forwardFunc signature: input tensor -> parent model -> child model -> output tensor</para>
-/// </summary>
-/// <remarks>forwardFunc input tensor is the input into the parent model </remarks>
-let inline fwd2< ^A,^B 
+let inline registerChildren< ^A,^B                
                 when  ^A : (member forward:TorchTensor->TorchTensor)
                 and   ^B : (member forward:TorchTensor->TorchTensor)
-                > 
-                (parent:^A) 
-                (child:^B) 
-                (forwardFunc : TorchTensor -> IModel -> IModel -> TorchTensor) =
-    let p = M parent
-    let c = M child
-    register p c    
-    {new IModel with 
-        member _.forward(t) = forwardFunc t p c
-        member _.Module = p.Module
-    }
-    |> Model    
-
-let inline fwd3< ^A,^B,^C  
-                when  ^A : (member forward:TorchTensor->TorchTensor)
-                and   ^B : (member forward:TorchTensor->TorchTensor)
-                and   ^C : (member forward:TorchTensor->TorchTensor)
-                > 
-                (parent:^A) 
-                (child1:^B) 
-                (child2:^C)
-                (forwardFunc : TorchTensor -> IModel -> IModel -> IModel -> TorchTensor) =
-    let p = M parent
-    let c1 = M child1
-    let c2 = M child2
-    register p c1
-    register p c2
-    {new IModel with 
-        member _.forward(t) = forwardFunc t p c1 c2
-        member _.Module = p.Module
-    }
-    |> Model   
-
-let inline fwd4< ^A,^B,^C,^D  
-                when  ^A : (member forward:TorchTensor->TorchTensor)
-                and   ^B : (member forward:TorchTensor->TorchTensor)
-                and   ^C : (member forward:TorchTensor->TorchTensor)
-                and   ^D : (member forward:TorchTensor->TorchTensor)
                 >  
-                (parent:^A) 
-                (child1:^B) 
-                (child2:^C)
-                (child3:^D)                
-                (forwardFunc : TorchTensor -> IModel -> IModel -> IModel -> IModel -> TorchTensor) =
-    let p = M parent
-    let c1 = M child1
-    let c2 = M child2
-    let c3 = M child3 
-    register p c1
-    register p c2
-    register p c3
-    {new IModel with 
-        member _.forward(t) = forwardFunc t p c1 c2 c3
-        member _.Module = p.Module
-    }
-    |> Model 
+                (children:^B seq) (parent:^A) =
+    let parent = M parent
+    let childModules = children |> Seq.map M
+    childModules |> Seq.iter (fun c -> register parent c)
 
+[<AbstractClass>]
+type AbstractModel() =
+    abstract member forward : TorchTensor->TorchTensor
+    abstract member Module : Module
+    interface IModel with
+        member this.forward(x) = this.forward(x)
+        member this.Module = this.Module
+    //operators TBD
+    static member (+) (a:IModel,b:TorchTensor) = {new IModel with
+                                                        member _.forward(x) = use t1 = a.forward(x) in t1 + b
+                                                        member _.Module = a.Module
+                                                   }
+                                                   |> Model   
+
+type FuncModel(name,parameters,fwd:TorchTensor->TorchTensor) =
+    inherit CustomModule(name,parameters)
+    override this.forward(t) = fwd t
+    member this.Module : Module = this :> _
+    interface IModel with
+        member this.forward(t) = this.forward(t)
+        member this.Module = this :> _    
+
+type Model (a:IModel) =
+    inherit AbstractModel()
+    override _.forward(x) = a.forward(x)
+    override _.Module = a.Module
+    member this.dispose() = if this.Module <> null then this.Module.Dispose()
+    static member nop = {new IModel with
+                            member _.forward t = t
+                            member _.Module = null
+                        }
+                        |> Model
+    
+///Create a model (module) from the given function and register the childModules as children
+let F (childModules:IModel seq) (fwd:TorchTensor -> TorchTensor) =
+    let p = new FuncModel(randName(), [||],fwd) 
+    registerChildren childModules p
+    p
+
+///Create a model (module) from the given function. Register the childModules as children and add the parameters to the model
+let F' (childModules:IModel seq) (parameters:Parameter seq) (fwd:TorchTensor -> TorchTensor) =
+    let p = new FuncModel(randName(), Seq.toArray parameters,fwd) 
+    registerChildren childModules p
+    p
+
+let private checkNames names childModules =
+    if Seq.length names <> Seq.length childModules + 1 then 
+        failwithf $"number of names should be 1 + the-number-of-child-modules. The first name is for the module itself. Expecting {Seq.length childModules + 1} name(s) but got {Seq.length names}"
+
+///<summary>Same as F but now assign names to all models (modules)</summary>
+/// <seealso cref="F" />
+let Fn names (childModules:IModel seq) (fwd:TorchTensor -> TorchTensor) =
+    checkNames names childModules
+    let p = new FuncModel(Seq.head names, [||],fwd) 
+    registerNamedChildren names childModules p
+    p
+
+///<summary>Same as F' but now assign names to all models (modules)</summary>
+/// <seealso cref="F'" />
+let Fn' names (childModules:IModel seq) (parameters:Parameter seq) (fwd:TorchTensor -> TorchTensor) =
+    checkNames names childModules
+    let p = new FuncModel(Seq.head names, Seq.toArray parameters,fwd) 
+    registerNamedChildren names childModules p
+    p
+    
 let compose (m1:IModel) (name,m2:IModel) = 
     let name = defaultArg name (randName())
     registerNamed m1 (name,m2)    
