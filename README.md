@@ -47,34 +47,32 @@ Below is an example of a 30 layer ResNet regression model:
 
 ```F#
 module Resnet =
-    let RESNET_DIM = 50L
+    let FTR_DIM = 310L
+    let RESNET_DIM = 10L
     let RESNET_DEPTH = 30
-    let FTR_DIM = 340L
-
-    let act() = SELU()
-
+    let act() = SELU() //SiLU()// LeakyReLU(0.05) // GELU() // GELU()
+    //residual block
     let resnetCell (input: Model) =
-        let cell =
+        let cell =  
             act()
-            ->> Linear(RESNET_DIM, RESNET_DIM) 
+            ->> Linear(RESNET_DIM, RESNET_DIM) //weight layer 1  
+            ->> Dropout(0.1)
             ->> act()
-            ->> Linear(RESNET_DIM, RESNET_DIM)
-            
+            ->> Linear(RESNET_DIM, RESNET_DIM)                
+        //skip connection
         let join =
-            fwd2 input cell (fun ``input tensor`` inputModel cellModel -> 
-                    use t1 = inputModel.forward (``input tensor``)
-                    use t2 = cellModel.forward (t1)
+            F [input; cell] (fun ``input tensor`` -> 
+                    use t1 = input.forward ``input tensor``
+                    use t2 = cell.forward t1
                     t1 + t2)
-
         join ->> act()
-
-    let create() =    
-        let emb = Linear(FTR_DIM, RESNET_DIM) |> M
+    //model
+    let model =
+        let emb = Linear(FTR_DIM, RESNET_DIM, hasBias=false) |> M
         let rsLayers =
             (emb, [ 1 .. RESNET_DEPTH ])
-            ||> List.fold (fun emb _ -> resnetCell emb)
+            ||> List.fold (fun emb _ -> resnetCell emb) //stack blocks
         rsLayers
         ->> Linear(RESNET_DIM,10L) 
-        ->> Linear(10L, 1L)
-        
+        ->> Linear(10L, 1L)        
 ```
