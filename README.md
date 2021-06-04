@@ -4,7 +4,7 @@ TorchSharp.Fun is thin functional wrapper in F# over TorchSharp (a .Net binding 
 
 ## TorchSharp.Fun Example
 
-Below is a simple sequential model. It is a composition over standard TorchSharp 'modules'. The compostion is performed with the '->>' operator.
+Below is a simple sequential model. It is a composition over standard TorchSharp 'modules'. The composition is performed with the '->>' operator.
 
 ```F#
 let model = 
