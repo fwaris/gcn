@@ -37,7 +37,7 @@ It is recommend to use Visual Studio code with F# / Ionide plug-in - just start 
 
 ## Why TorchSharp.Fun?
 
-A function-compostional approach to deep learning models arose when I could not easily create a deep ResNet model with 'standard' TorchSharp.
+A function-compositional approach to deep learning models arose when I could not easily create a deep ResNet model with 'standard' TorchSharp.
 
 An alternative F# library was also tried. The library supports an elegant API; it was easy to create a deep ResNet model. Unfortunately at its current stage of development, the training performance for deep models is not on par with that of basic TorchSharp.
 
