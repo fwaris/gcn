@@ -3,7 +3,7 @@ open System
 open Argu
 open System.Diagnostics
 
-let DATA_FOLDER    =  __SOURCE_DIRECTORY__ + @"/../../gcn/data/cora"
+let DATA_FOLDER    =  __SOURCE_DIRECTORY__ + @"/../data/cora"
 
 module Defs =
     let no_cuda =  false
