@@ -2,7 +2,7 @@
 #load "../Utils.fs"
 open TorchSharp.Fun
 
-let datafolder = @"C:\s\Repos\gcn\data\cora"
+let datafolder =  __SOURCE_DIRECTORY__ + @"../../../data/cora"
 let  adj, features, labels, idx_train, idx_val, idx_test = Utils.loadData datafolder None
 
 let v1 = adj.[0L,50L] |> float

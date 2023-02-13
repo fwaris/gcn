@@ -3,11 +3,7 @@ open System
 open Argu
 open System.Diagnostics
 
-//change these for your environment 
-let TORCH_LIB_PATH = @"D:\s\libtorch\lib\torch_cuda.dll"
-let DATA_FOLDER    =  @"C:\s\Repos\gcn\data\cora"
-
-System.Runtime.InteropServices.NativeLibrary.Load(TORCH_LIB_PATH) |> ignore
+let DATA_FOLDER    =  __SOURCE_DIRECTORY__ + @"/../../gcn/data/cora"
 
 module Defs =
     let no_cuda =  false

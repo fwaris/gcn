@@ -2,7 +2,7 @@ module Utils
 open System
 open System.IO
 open MathNet.Numerics.LinearAlgebra
-open TorchSharp.Tensor
+open TorchSharp
 
 let encode_onehot labels =
     let classes_dict = 
@@ -30,16 +30,16 @@ let normalize (m:Matrix<float32>) =
 
 let sparse_mx_to_torch_sparse_tensor (m:Matrix<float32>) =
     let coo = m.EnumerateIndexed(Zeros.AllowSkip)
-    let rows = coo |> Seq.map (fun (r,c,v) -> int64 r)   
-    let cols = coo |> Seq.map (fun (r,c,v) -> int64 c)
-    let vals = coo |> Seq.map (fun (r,c,v) -> v)
+    let rows = coo |> Seq.map (fun struct(r,c,v) -> int64 r)   
+    let cols = coo |> Seq.map (fun struct(r,c,v) -> int64 c)
+    let vals = coo |> Seq.map (fun struct(r,c,v) -> v)
     let idxs = Seq.append rows cols |> Seq.toArray
-    let idxT = idxs |> Int64Tensor.from |> fun x -> x.view(2L, idxs.Length / 2 |> int64)
-    let valsT = vals |> Seq.toArray |> Float32Tensor.from     
-    let t = Float32Tensor.sparse(idxT,valsT,[|int64 m.RowCount; int64 m.ColumnCount|])
+    let idxT = idxs |> torch.tensor |> fun x -> x.view(2L, idxs.Length / 2 |> int64)
+    let valsT = vals |> Seq.toArray |> torch.tensor
+    let t = torch.sparse(idxT,valsT,[|int64 m.RowCount; int64 m.ColumnCount|])
     t
 
-let accuracy(output:TorchTensor, labels:TorchTensor) = 
+let accuracy(output:torch.Tensor, labels:torch.Tensor) = 
     let predsData = TorchSharp.Fun.Tensor.getData<float32>(output)
     let preds  = predsData |> Array.chunkBySize (int output.shape.[1]) |> Array.map maxIdx
     let lbls = TorchSharp.Fun.Tensor.getData<int64>(labels)
@@ -98,11 +98,11 @@ let loadData (dataFolder:string) dataset =
     let idx_val   = [|200L .. 499L|]
     let idx_test  = [|500L .. 1499L|]
 
-    let features = Float32Tensor.from(ftrs_n.Enumerate() |> Seq.toArray).view(-1L, int64 ftrs_n.ColumnCount)
-    let labels = Int64Tensor.from(labels |> Seq.map maxIdx |> Seq.toArray ).view(-1L)
+    let features = torch.tensor(ftrs_n.Enumerate() |> Seq.toArray).view(-1L, int64 ftrs_n.ColumnCount)
+    let labels = torch.tensor(labels |> Seq.map maxIdx |> Seq.toArray ).view(-1L)
     let adj = sparse_mx_to_torch_sparse_tensor graph_n
-    let idx_train = Int64Tensor.from idx_train 
-    let idx_val = Int64Tensor.from idx_val     
-    let idx_test = Int64Tensor.from idx_test   
+    let idx_train = torch.tensor idx_train 
+    let idx_val = torch.tensor idx_val     
+    let idx_test = torch.tensor idx_test   
     
     adj, features, labels, idx_train, idx_val, idx_test
