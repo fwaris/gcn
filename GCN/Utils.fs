@@ -36,7 +36,7 @@ let sparse_mx_to_torch_sparse_tensor (m:Matrix<float32>) =
     let idxs = Seq.append rows cols |> Seq.toArray
     let idxT = idxs |> torch.tensor |> fun x -> x.view(2L, idxs.Length / 2 |> int64)
     let valsT = vals |> Seq.toArray |> torch.tensor
-    let t = torch.sparse(idxT,valsT,[|int64 m.RowCount; int64 m.ColumnCount|])
+    let t = torch.sparse_coo_tensor(idxT,valsT,[|int64 m.RowCount; int64 m.ColumnCount|])
     t
 
 let accuracy(output:torch.Tensor, labels:torch.Tensor) = 
