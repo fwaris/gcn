@@ -23,7 +23,7 @@
     <PackageReference Include="Microsoft.ML.AutoML" Version="0.21.1" />
     <PackageReference Include="Plotly.NET" Version="4.2.0" />
     <PackageReference Include="TorchSharp-cuda-windows" Version="0.101.5" />
-    <PackageReference Include="TorchSharp.Fun" Version="0.77.0" />
+    <PackageReference Include="TorchSharp.Fun" Version="0.79.0" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Update="FSharp.Core" Version="8.0.101" />
